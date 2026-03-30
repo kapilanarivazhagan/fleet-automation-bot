@@ -1,0 +1,11 @@
+Insights Report/
+│
+├── main.py
+├── config.py
+├── data_loader.py
+├── metrics.py
+├── ai_insights.py
+├── html_template.py
+│
+├── credentials.json
+├── .env
