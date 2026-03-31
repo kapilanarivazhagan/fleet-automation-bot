@@ -120,11 +120,11 @@ def build_base_insight(metrics, vehicle_counts, rfd_reason, rfd_from_servicing, 
     # ACTIONS (UNCHANGED FORMAT)
     # ----------------------------
     rfd_action = (
-        f"Maintain +{rfd_daily_target} daily net additions to reduce RFD backlog and improve fleet efficiency"
+        f"Maintain +{rfd_daily_target} daily net additions to reduce RFD backlog and to stay on track with monthly targets"
     )
 
     service_action = (
-        f"Close {serv_daily_target} servicing cases daily to control downtime and prevent backlog"
+        f"Close {serv_daily_target} servicing cases daily to control downtime and to support monthly deployment targets"
     )
 
     return {
