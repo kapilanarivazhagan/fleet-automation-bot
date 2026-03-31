@@ -7,9 +7,15 @@ from datetime import datetime
 # ============================================================
 
 def get_status_value(df, status):
-    val = df[df["Status"] == status]["% of City Total"].mean()
-    return 0.0 if pd.isna(val) else val * 100
+    status_df = df[df["Status"] == status]
 
+    total = df["Total"].sum()
+    status_total = status_df["Total"].sum()
+
+    if total == 0:
+        return 0.0
+
+    return (status_total / total) * 100
 
 # ============================================================
 # CALCULATE METRICS
