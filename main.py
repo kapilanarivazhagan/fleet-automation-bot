@@ -227,8 +227,8 @@ def generate_city_report(city):
     # DAILY TARGETS (MONTH EXECUTION)
     # ============================================================
 
-    rfd_daily_target = max(1, round(rfd_count / days_left)) if days_left > 0 else 0
-    serv_daily_target = max(1, round(serv_count / days_left)) if days_left > 0 else 0
+    rfd_daily_target = max(1, round(rfd_count / days_left + 4)) if days_left > 0 else 0
+    serv_daily_target = max(1, round(serv_count / days_left + 2)) if days_left > 0 else 0
 
     # ============================================================
     # VEHICLE COUNTS (FOR AI NUMBERS)

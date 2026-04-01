@@ -124,7 +124,7 @@ def build_base_insight(metrics, vehicle_counts, rfd_reason, rfd_from_servicing, 
     )
 
     service_action = (
-        f"Close {serv_daily_target} servicing cases daily to control downtime and to support monthly deployment targets"
+        f"Close {serv_daily_target} non rapido servicing cases daily to control downtime and to support monthly deployment targets"
     )
 
     return {
