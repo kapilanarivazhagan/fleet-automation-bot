@@ -73,6 +73,14 @@ def generate_city_report(city):
     print("Comparing:", latest_date.date(), "vs", yesterday.date())
 
     print("📊 Calculating metrics...")
+
+    # 🔥 SINGLE SOURCE OF TRUTH
+    vehicle_df = get_vehicle_table(df, city)
+    vehicle_df_clean = vehicle_df[vehicle_df["Status"] != "Grand Total"]
+
+    print("TODAY DF TOTAL:", today_df["Total"].sum())
+    print("VEHICLE DF TOTAL:", vehicle_df["Total"].sum())  
+
     metrics = calculate_metrics(today_df, yday_df)
 
     # ============================================================
@@ -118,13 +126,8 @@ def generate_city_report(city):
     # TOTAL FLEET SIZE
     # ============================================================
 
-    today_total_fleet = (
-        today_on + today_rfd + today_serv_rapido + today_serv_non
-    )
-
-    yday_total_fleet = (
-        yday_on + yday_rfd + yday_serv_rapido + yday_serv_non
-    )
+    today_total_fleet = today_df["Total"].sum()
+    yday_total_fleet = yday_df["Total"].sum()
 
     fleet_change = today_total_fleet - yday_total_fleet
 
@@ -206,6 +209,7 @@ def generate_city_report(city):
 
     print("📋 Building vehicle table...")
     vehicle_df = get_vehicle_table(df, city)
+    vehicle_df_clean = vehicle_df[vehicle_df["Status"] != "Grand Total"]
 
     # ============================================================
     # BACKLOG + DAYS LEFT

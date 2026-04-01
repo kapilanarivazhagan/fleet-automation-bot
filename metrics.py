@@ -1,5 +1,32 @@
 import pandas as pd
-from datetime import datetime
+
+# ============================================================
+# GLOBAL: USE FULL FLEET CONSISTENTLY
+# ============================================================
+
+# If in future you want deployable fleet, just edit this list
+# VALID_STATUSES = None  
+# Example:
+# VALID_STATUSES = [
+#     "On Ground",
+#     "RFD",
+#     "Under Servicing - Rapido",
+#     "Under Servicing - Non Rapido"
+# ]
+
+VALID_STATUSES = [
+    "On Ground",
+    "RFD",
+    "Under Servicing - Rapido",
+    "Under Servicing - Non Rapido",
+    "Under Recovery",
+    "Back-up"
+]
+
+def _filter_df(df):
+    if VALID_STATUSES is None:
+        return df
+    return df[df["Status"].isin(VALID_STATUSES)]
 
 
 # ============================================================
@@ -7,6 +34,8 @@ from datetime import datetime
 # ============================================================
 
 def get_status_value(df, status):
+    df = _filter_df(df)
+
     status_df = df[df["Status"] == status]
 
     total = df["Total"].sum()
@@ -17,11 +46,16 @@ def get_status_value(df, status):
 
     return (status_total / total) * 100
 
+
 # ============================================================
 # CALCULATE METRICS
 # ============================================================
 
 def calculate_metrics(today_df, yday_df):
+
+    # 🔥 IMPORTANT: Apply SAME filtering to both
+    today_df = _filter_df(today_df)
+    yday_df = _filter_df(yday_df)
 
     m = {}
 
