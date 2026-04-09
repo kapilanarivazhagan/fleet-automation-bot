@@ -16,6 +16,7 @@ import pandas as pd
 
 VALID_STATUSES = [
     "On Ground",
+    "Deployed Refynd",   # ✅ ADD THIS
     "RFD",
     "Under Servicing - Rapido",
     "Under Servicing - Non Rapido",
@@ -51,6 +52,17 @@ def get_status_value(df, status):
 # CALCULATE METRICS
 # ============================================================
 
+def get_combined_status(df, statuses):
+    df = _filter_df(df)
+
+    total = df["Total"].sum()
+    status_total = df[df["Status"].isin(statuses)]["Total"].sum()
+
+    if total == 0:
+        return 0.0
+
+    return (status_total / total) * 100
+
 def calculate_metrics(today_df, yday_df):
 
     # 🔥 IMPORTANT: Apply SAME filtering to both
@@ -60,9 +72,15 @@ def calculate_metrics(today_df, yday_df):
     m = {}
 
     # ON GROUND
-    m["on_today"] = round(get_status_value(today_df, "On Ground"), 2)
+    m["on_today"] = round(
+        get_combined_status(today_df, ["On Ground", "Deployed Refynd"]),
+        2
+    )
+
     m["on_change"] = round(
-        m["on_today"] - get_status_value(yday_df, "On Ground"), 2
+        m["on_today"]
+        - get_combined_status(yday_df, ["On Ground", "Deployed Refynd"]),
+        2
     )
 
     # RFD

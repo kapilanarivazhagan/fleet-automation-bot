@@ -96,7 +96,26 @@ def generate_city_report(city):
                 return series[name]
         return 0
 
+    # -----------------------------
+    # BASE VALUES
+    # -----------------------------
     today_on = get_status(today_status, ["On Ground"])
+    yday_on = get_status(yday_status, ["On Ground"])
+
+    today_refynd = get_status(today_status, ["Deployed Refynd"])
+    yday_refynd = get_status(yday_status, ["Deployed Refynd"])
+
+    # -----------------------------
+    # DYNAMIC LOGIC (KEY FIX)
+    # -----------------------------
+    # Include Refynd ONLY if present in BOTH days
+    if today_refynd > 0 and yday_refynd > 0:
+        today_on += today_refynd
+        yday_on += yday_refynd
+
+    # -----------------------------
+    # OTHER METRICS (NO TOUCH)
+    # -----------------------------
     today_rfd = get_status(today_status, ["RFD"])
 
     today_serv_rapido = get_status(
@@ -109,7 +128,6 @@ def generate_city_report(city):
         ["Servicing - Non Rapido", "Servicing Non Rapido"]
     )
 
-    yday_on = get_status(yday_status, ["On Ground"])
     yday_rfd = get_status(yday_status, ["RFD"])
 
     yday_serv_rapido = get_status(
@@ -227,24 +245,35 @@ def generate_city_report(city):
     ]
     serv_count = int(serv_row.values[0]) if not serv_row.empty else 0
 
+    rapido_row = vehicle_df.loc[
+        vehicle_df["Status"] == "Under Servicing - Rapido", "Total" 
+    ]
+    rapido_count = int(rapido_row.values[0]) if not rapido_row.empty else 0
+
     # ============================================================
     # DAILY TARGETS (MONTH EXECUTION)
     # ============================================================
 
     rfd_daily_target = max(1, round(rfd_count / days_left + 4)) if days_left > 0 else 0
     serv_daily_target = max(1, round(serv_count / days_left + 2)) if days_left > 0 else 0
+    rapido_daily_target = max(1, round(rapido_count / days_left + 2)) if days_left > 0 else 0
 
     # ============================================================
     # VEHICLE COUNTS (FOR AI NUMBERS)
     # ============================================================
 
     vehicle_counts = {
-        "on_today": int(today_on),
+        "on_today": int(today_on),   # includes refynd (for %)
         "on_yday": int(yday_on),
+
         "rfd_today": int(today_rfd),
         "rfd_yday": int(yday_rfd),
+
         "serv_today": int(today_serv_rapido + today_serv_non),
-        "serv_yday": int(yday_serv_rapido + yday_serv_non)
+        "serv_yday": int(yday_serv_rapido + yday_serv_non),
+
+        "refynd_today": int(today_refynd),
+        "refynd_yday": int(yday_refynd)
     }
 
     risk_flag = detect_demand_risk(metrics)
@@ -264,7 +293,7 @@ def generate_city_report(city):
         movement_data,
         rfd_from_servicing,
         rfd_from_attrition,
-        rfd_from_fleet_addition,   # ✅ MOVE HERE
+        rfd_from_fleet_addition,
         city,
         is_weekend,
         vehicle_counts,
@@ -272,7 +301,8 @@ def generate_city_report(city):
         trend,
         rfd_daily_target,
         serv_daily_target,
-        peak_on
+        peak_on,
+        rapido_daily_target
     )
 
     # ============================================================
@@ -292,6 +322,9 @@ def generate_city_report(city):
 Rapido {metrics['serv_rapido_today']:.2f}% ({metrics['serv_rapido_change']:+.2f}%),
 Non-Rapido {metrics['serv_nonrapido_today']:.2f}% ({metrics['serv_nonrapido_change']:+.2f}%)
 {ai_data['servicing_note']}
+
+4. Refynd:
+{ai_data['refynd_note']}
 
 Operational Insights
 {ai_data['operational_insight']}
@@ -421,7 +454,6 @@ def generate_all_reports():
             reports.append(report_file)
 
     return reports
-
 
 if __name__ == "__main__":
     generate_all_reports()

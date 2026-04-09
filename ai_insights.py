@@ -21,12 +21,47 @@ def extract_json(text):
 # BASE DETERMINISTIC LOGIC (UPDATED ELITE VERSION 🔥)
 # ============================================================
 
-def build_base_insight(metrics, vehicle_counts, rfd_reason, rfd_from_servicing, rfd_from_attrition, rfd_from_fleet_addition,
-                       rfd_daily_target, serv_daily_target, city, peak_on):
+def build_base_insight(
+    metrics,
+    vehicle_counts,
+    rfd_reason,
+    rfd_from_servicing,
+    rfd_from_attrition,
+    rfd_from_fleet_addition,
+    rfd_daily_target,
+    serv_daily_target,
+    city,
+    peak_on,
+    rapido_daily_target
+):
 
     on_change = vehicle_counts["on_today"] - vehicle_counts["on_yday"]
     rfd_change = vehicle_counts["rfd_today"] - vehicle_counts["rfd_yday"]
     serv_change = vehicle_counts["serv_today"] - vehicle_counts["serv_yday"]
+
+    # ----------------------------
+    # REFYND
+    # ----------------------------
+    refynd_today = vehicle_counts.get("refynd_today", 0)
+    refynd_yday = vehicle_counts.get("refynd_yday", 0)
+
+    # 🚨 detect NEW launch case
+    is_new_refynd = refynd_yday == 0 and refynd_today > 0
+
+    refynd_change = refynd_today - refynd_yday
+
+    # CLEAN REFYND NOTE
+    if is_new_refynd:
+        refynd_note = "Refynd introduced into fleet."
+
+    elif refynd_change > 0:
+        refynd_note = f"Refynd increased by +{refynd_change} vehicles."
+
+    elif refynd_change < 0:
+        refynd_note = f"Refynd decreased by {abs(refynd_change)} vehicles."
+
+    else:
+        refynd_note = "Refynd remained stable."
 
     # ----------------------------
     # ON GROUND (ELITE)
@@ -38,14 +73,20 @@ def build_base_insight(metrics, vehicle_counts, rfd_reason, rfd_from_servicing, 
     gap_to_peak = max(0, peak_on - today_on)
 
     if vs_yday > 0:
-        on_note = f"On Ground improved by +{vs_yday} vs yesterday."
+        on_note = f"On Ground increased by +{vs_yday} compared to yesterday."
 
     elif vs_yday < 0:
-        on_note = f"On Ground dropped by {abs(vs_yday)} vs yesterday."
+        on_note = f"On Ground decreased by {abs(vs_yday)} compared to yesterday."
 
     else:
-        on_note = "On Ground remained stable vs yesterday."
+        on_note = "On Ground remained stable compared to yesterday."
 
+
+    if not is_new_refynd and refynd_change > 0:
+        on_note += f" Refynd contribution increased (+{refynd_change})."
+
+    elif not is_new_refynd and refynd_change < 0:
+        on_note += f" Refynd contribution declined ({refynd_change})."
 
     # ----------------------------
     # RFD (FINAL CORRECT LOGIC)
@@ -65,16 +106,31 @@ def build_base_insight(metrics, vehicle_counts, rfd_reason, rfd_from_servicing, 
         if rfd_from_fleet_addition > 0:
             parts.append(f"+{rfd_from_fleet_addition} from fleet addition")
 
+        # 🔥 REFYND IMPACT (only if not new launch)
+        if not is_new_refynd and refynd_change > 0:
+            parts.append(f"+{refynd_change} from refynd")
+
         breakdown = ", ".join(parts)
 
         rfd_note = f"RFD increased by +{rfd_change} vehicles"
         if breakdown:
             rfd_note += f" ({breakdown})"
 
+
     elif rfd_change < 0:
-        rfd_note = (
-            f"RFD reduced by {abs(rfd_change)} vehicles due to improved deployment."
-        )
+
+        parts = []
+
+        # 🔥 REFYND IMPACT (only if not new launch)
+        if not is_new_refynd and refynd_change > 0:
+            parts.append(f"refynd deployment")
+
+        parts.append("improved deployment")
+
+        reason = ", ".join(parts)
+
+        rfd_note = f"RFD reduced by {abs(rfd_change)} vehicles due to {reason}."
+
 
     # ----------------------------
     # SERVICING (SHARP + REAL)
@@ -124,13 +180,15 @@ def build_base_insight(metrics, vehicle_counts, rfd_reason, rfd_from_servicing, 
     )
 
     service_action = (
-        f"Close {serv_daily_target} non rapido servicing cases daily to control downtime and to support monthly deployment targets"
+        f"Close {rapido_daily_target} rapido servicing cases daily and "
+        f"{serv_daily_target} non rapido servicing cases daily to control downtime and support monthly deployment targets"
     )
 
     return {
         "on_ground_note": on_note,
         "rfd_note": rfd_note,
         "servicing_note": servicing_note,
+        "refynd_note": refynd_note,
         "operational_insight": operational_insight,
         "rfd_action": rfd_action,
         "service_action": service_action
@@ -150,7 +208,6 @@ Write like a fleet operations manager.
 Be direct, concise, and action-oriented.
 Avoid words like: experienced, witnessed, approximately, has been.
 DO NOT replace the word "vehicles" with "units" or any other term.
-Always use the phrase "vehicles below full deployment".
 Do NOT remove phrases like "recovery in progress".
 
 STRICT RULES:
@@ -217,7 +274,8 @@ def generate_ai_insight(
     trend,
     rfd_daily_target,
     serv_daily_target,
-    peak_on
+    peak_on,
+    rapido_daily_target  
 ):
 
     base_data = build_base_insight(
@@ -230,7 +288,8 @@ def generate_ai_insight(
         rfd_daily_target,
         serv_daily_target,
         city,
-        peak_on 
+        peak_on,
+        rapido_daily_target   # ✅ ADD THIS
     )
 
     final_data = rephrase_with_ai(base_data)

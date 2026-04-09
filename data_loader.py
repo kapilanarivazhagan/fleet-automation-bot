@@ -23,6 +23,15 @@ def load_sheet():
     df = pd.DataFrame(records)
     df.columns = df.columns.str.strip()
 
+    df["Status"] = (
+        df["Status"]
+        .astype(str)
+        .str.strip()
+        .replace({
+            "Deployed - Refynd": "Deployed Refynd"
+        })
+    )
+
     if "% of City Total" in df.columns:
         df["% of City Total"] = (
             df["% of City Total"].astype(str).str.replace("%", "", regex=False)
@@ -43,6 +52,16 @@ def get_vehicle_table(df, city):
     latest_date = df["Date"].max()
     vdf = df[df["Date"] == latest_date].copy()
 
+    vdf["Status"] = (   
+        vdf["Status"]
+        .astype(str)
+        .str.strip()
+    )
+
+    vdf["Status"] = vdf["Status"].replace({
+        "Deployed - Refynd": "Deployed Refynd"
+    })  
+
     if city != "Combined three cities":
         vdf = vdf[vdf["City"].str.lower() == city.lower()]
 
@@ -55,14 +74,19 @@ def get_vehicle_table(df, city):
         vdf = vdf.groupby("Status", as_index=False).sum()
 
     status_order = [
-        "On Ground", "RFD", "Under Servicing (All)",
-        "Under Servicing - Rapido", "Under Servicing - Non Rapido",
-        "Under Recovery", "Back-up"
+        "On Ground",
+        "Deployed Refynd",  
+        "RFD",
+        "Under Servicing (All)",
+        "Under Servicing - Rapido",
+        "Under Servicing - Non Rapido",
+        "Under Recovery",
+        "Back-up"
     ]
 
     vdf["Status"] = pd.Categorical(vdf["Status"], categories=status_order, ordered=True)
     vdf = vdf.sort_values("Status")
-
+    vdf = vdf[vdf["Status"].notna()]
     exclude = ["Under Servicing - Rapido", "Under Servicing - Non Rapido"]
 
     numeric_cols = [c for c in vdf.columns if c != "Status"]

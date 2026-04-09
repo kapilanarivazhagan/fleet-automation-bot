@@ -190,8 +190,6 @@ align-items:start;
 .insight-section {{
   grid-column: 2;
   grid-row: 1 / span 2;
-
-  /* 🔥 FIX: lock height */
   max-height: calc(100vh - 140px);
   overflow: hidden;
 }}
@@ -381,6 +379,7 @@ padding:22px 20px;
 backdrop-filter:blur(10px);
 border-left:3px solid #a78bfa;
 height: 100%;
+min-height: 0; 
 display: flex;
 flex-direction: column;
 }}
@@ -399,6 +398,8 @@ color:#cbd5e1;
 overflow-y: auto;
 flex: 1;
 padding-right: 6px;
+scrollbar-width: thin;
+scroll-behavior: smooth;
 }}
 
 .footer {{
