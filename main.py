@@ -323,9 +323,6 @@ Rapido {metrics['serv_rapido_today']:.2f}% ({metrics['serv_rapido_change']:+.2f}
 Non-Rapido {metrics['serv_nonrapido_today']:.2f}% ({metrics['serv_nonrapido_change']:+.2f}%)
 {ai_data['servicing_note']}
 
-4. Refynd:
-{ai_data['refynd_note']}
-
 Operational Insights
 {ai_data['operational_insight']}
 
