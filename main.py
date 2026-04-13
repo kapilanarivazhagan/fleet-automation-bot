@@ -54,23 +54,25 @@ def generate_city_report(city):
 
     today_df = city_df[city_df["Date"] == latest_date]
 
-    yesterday = None
-    today_total = today_df["Total"].sum()
+    from datetime import timedelta
 
-    for prev_date in reversed(unique_dates[:-1]):
-        prev_df = city_df[city_df["Date"] == prev_date]
-        prev_total = prev_df["Total"].sum()
+    latest_date = unique_dates[-1]
 
-        if today_total != prev_total:
-            yesterday = prev_date
-            break
+    prev_date = latest_date - timedelta(days=1)
 
-    if yesterday is None:
-        yesterday = unique_dates[-2]
+    if latest_date.weekday() == 0:  # Monday
+        prev_date = latest_date - timedelta(days=2)
 
-    yday_df = city_df[city_df["Date"] == yesterday]
+    # Safety: if data missing, fallback to closest available previous date
+    if prev_date not in unique_dates:
+        prev_date = max([d for d in unique_dates if d < latest_date])
 
-    print("Comparing:", latest_date.date(), "vs", yesterday.date())
+    today_df = city_df[city_df["Date"] == latest_date]
+    yday_df = city_df[city_df["Date"] == prev_date]
+
+    print("Comparing:", latest_date.date(), "vs", prev_date.date())
+
+    yday_df = city_df[city_df["Date"] == prev_date]
 
     print("📊 Calculating metrics...")
 
@@ -101,17 +103,15 @@ def generate_city_report(city):
     # -----------------------------
     today_on = get_status(today_status, ["On Ground"])
     yday_on = get_status(yday_status, ["On Ground"])
-
-    today_refynd = get_status(today_status, ["Deployed Refynd"])
-    yday_refynd = get_status(yday_status, ["Deployed Refynd"])
+    today_refynd = get_status(today_status, ["Deployed - Refynd", "Deployed Refynd"])
+    yday_refynd = get_status(yday_status, ["Deployed - Refynd", "Deployed Refynd"])
 
     # -----------------------------
     # DYNAMIC LOGIC (KEY FIX)
     # -----------------------------
     # Include Refynd ONLY if present in BOTH days
-    if today_refynd > 0 and yday_refynd > 0:
-        today_on += today_refynd
-        yday_on += yday_refynd
+    today_on += today_refynd
+    yday_on += yday_refynd
 
     # -----------------------------
     # OTHER METRICS (NO TOUCH)
